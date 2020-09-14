@@ -1,0 +1,56 @@
+version: "2.1"
+
+services:
+  openssh-server:
+    image: linuxserver/openssh-server
+    container_name: firewall-server
+    hostname: firewall
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Australia/Sydney
+      - PASSWORD_ACCESS=true
+      - SUDO_ACCESS=true
+      - USER_NAME=user
+      - USER_PASSWORD=password
+    ports:
+      - 2222:2222
+    extra_hosts:
+      - "webserver:172.16.1.12"
+    networks:
+      dmz-network:
+        ipv4_address: 172.16.0.10
+      pivot-network:
+        ipv4_address: 172.16.1.11
+
+  webserver:
+    image: strm/helloworld-http
+    container_name: webserver
+    hostname: webserver
+    ports:
+      - "80:80"
+    extra_hosts:
+      - "firewall:172.16.0.10"
+    networks:
+      pivot-network:
+        ipv4_address: 172.16.1.12
+
+networks:
+  dmz-network:
+    driver: bridge
+    driver_opts:
+      com.docker.network.enable_ipv6: "false"
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.16.0.0/24
+          gateway: 172.16.0.3
+  pivot-network:
+    driver: bridge
+    driver_opts:
+      com.docker.network.enable_ipv6: "false"
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.16.1.0/24
+          gateway: 172.16.1.3
